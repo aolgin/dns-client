@@ -24,6 +24,7 @@ my @tries = (	"\@129.10.112.152 joshua.ccs.neu.edu",
                 "\@129.10.112.152 128.42.5.4" );
 test($problem, 1, \@tries);
 
+=begin
 print "\nFinal project tests\n";
 my @tries = (	"\@129.10.112.152 joshua.ccs.neu.edu",
                 "\@129.10.112.152 www.ccs.neu.edu",
@@ -45,6 +46,8 @@ my @tries = (	"-mx \@129.10.112.152 ccs.neu.edu",
                 "-ns \@129.10.112.152 ccs.neu.edu",
                 "-ns \@129.10.112.152 slashdot.org");
 test($problem, 0, \@tries);
+=end
+=cut
 
 sub test {
   my ($problem, $response, $vals) = @_;
