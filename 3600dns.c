@@ -113,29 +113,47 @@ int main(int argc, char *argv[]) {
   //
 
   // Set up the packet header
-  packet_head ph;
-  flag pf;
-  ph.id = id_code; // TODO should we be passing the hex or decimal value?
-  pf.qr = 0;
-  pf.opcode = 0;
-  pf.rd = 1;
-  pf.z = 0;
-  ph.flags = pf;
-  ph.qdcount = 1;
-  ph.ancount = 0;
-  ph.nscount = 0;
-  ph.arcount = 0;
+
+
+  packet_head* ph = alloca(sizeof(packet_head));
+  //flag* pf = alloca(sizeof(flag));
+  ph->id = htons(id_code); // TODO should we be passing the hex or decimal value?
+  ph->qr = 0;
+  ph->opcode = 0;
+  ph->rd = 1;
+  ph->z = 0;
+  //ph->flags = *pf;
+  ph->qdcount = htons(1);
+  ph->ancount = htons(0);
+  ph->nscount = htons(0);
+  ph->arcount = htons(0);
 
   // Set up the question
   int qnamelen = strlen(argv[2]);
   int qsize = 32 + qnamelen;
   char* qname = argv[2];
-  int qtype = 1;
-  int qclass = 1;
+  int qtype = htons(1);
+  int qclass = htons(1);
   
 
   // send the DNS request (and call dump_packet with your request)
+  // the size of a packet
+  int packet_size = sizeof(packet_head) + qsize;
+  unsigned char* mypacket = alloca(packet_size); // TODO need an actual size here, currently pseudo-code.
+                                                          // Not taking into account answer, authority, and additional fields
+                                                          //
+  int packetlen = 0;
+  memcpy(mypacket, ph, sizeof(packet_head));
+  packetlen += sizeof(packet_head);
+  memcpy(mypacket + packetlen, qname, qnamelen);
+  packetlen += qnamelen;
+  memcpy(mypacket + packetlen, &qtype, sizeof(int));
+  packetlen += sizeof(int);
+  memcpy(mypacket + packetlen, &qclass, sizeof(int));
+  packetlen += sizeof(int);
 
+  dump_packet(mypacket, packetlen);
+  
   // first, open a UDP socket  
   int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
@@ -146,20 +164,19 @@ int main(int argc, char *argv[]) {
   out.sin_addr.s_addr = inet_addr(server);
 
   // the size of a packet
-  int packet_size = sizeof(packet_head) + qsize;
-  unsigned char* mypacket = alloca(packet_size); // TODO need an actual size here, currently pseudo-code.
+  //int packet_size = sizeof(packet_head) + qsize;
+  //unsigned char* mypacket = alloca(packet_size); // TODO need an actual size here, currently pseudo-code.
                                                           // Not taking into account answer, authority, and additional fields
- 
-  memcpy(mypacket, &ph, sizeof(packet_head));
-  memcpy(mypacket + sizeof(packet_head), qname, qnamelen);
-  memcpy(mypacket + sizeof(packet_head) + qnamelen, &qtype, sizeof(int));
-  memcpy(mypacket + sizeof(packet_head) + qnamelen + sizeof(int), &qclass, sizeof(int));
+  //memcpy(mypacket, &ph, sizeof(packet_head));
+  //memcpy(mypacket + sizeof(packet_head), qname, qnamelen);
+  //memcpy(mypacket + sizeof(packet_head) + qnamelen, &qtype, sizeof(int));
+  //memcpy(mypacket + sizeof(packet_head) + qnamelen + sizeof(int), &qclass, sizeof(int));
 
-  dump_packet(mypacket, packet_size);
-  if (sendto(sock, mypacket, packet_size, 0, &out, sizeof(out)) < 0) {
+  //dump_packet(mypacket, packet_size);
+  if (sendto(sock, mypacket, packetlen, 0, (struct sockaddr*)&out, sizeof(out)) < 0) {
     // an error occurred
     fprintf(stderr, "ERROR IN SENDTO");
-    exit(1);
+    return -1;
   }
 
   /* MILESTONE MARK AREA */
