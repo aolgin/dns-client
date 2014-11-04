@@ -23,10 +23,8 @@
 
 #include "3600dns.h"
 
-// The server all queries should be sent to
-static const char* server = "@129.10.112.152";
-//static const int id_code_hex = 0x0539;
-static const int id_code = 1337;
+static const char* server = "@129.10.112.152"; // The test server all queries should be sent to
+static const int id_code = 1337; // The query id for each outgoing packet
 
 /**
  * This function will print a hex dump of the provided packet to the screen
@@ -110,11 +108,10 @@ int main(int argc, char *argv[]) {
   // Currently just ignoring those and using the defaults
 
   // construct the DNS request
-  //
 
   // Set up the packet header
   packet_head* ph = alloca(sizeof(packet_head));
-  ph->id = htons(id_code); // TODO should we be passing the hex or decimal value?
+  ph->id = htons(id_code);
   ph->qr = 0;
   ph->opcode = 0;
   ph->rd = 1;
@@ -125,32 +122,34 @@ int main(int argc, char *argv[]) {
   ph->arcount = htons(0);
 
   // Set up the question
-  char* qname = argv[2];
+  question * q = alloca(sizeof(question));
+  const char* qname = argv[2];
   int qnamelen = strlen(qname);
   int qsize = sizeof(question) + (qnamelen * sizeof(char));
-  //int qtype = htons(1);
-  //int qclass = htons(1);
-  question* q = alloca(sizeof(question));
   q->qtype = htons(1);
   q->qclass = htons(1);
 
   // send the DNS request (and call dump_packet with your request)
+  
   // the size of a packet
   int packet_size = sizeof(packet_head) + qsize;
-  unsigned char* mypacket = alloca(packet_size); // TODO need an actual size here, currently pseudo-code.
+  unsigned char* mypacket = calloc(1, packet_size);//alloca(packet_size); // TODO need an actual size here, currently pseudo-code.
                                                           // Not taking into account answer, authority, and additional fields
-                                                          //
+  
+  // Copy the packet into the allocated address space
   int packetlen = 0;
   memcpy(mypacket, ph, sizeof(packet_head));
   packetlen += sizeof(packet_head);
   memcpy(mypacket + packetlen, qname, qnamelen * sizeof(char));
   packetlen += (qnamelen * sizeof(char));
-  //memcpy(mypacket + packetlen, &qtype, sizeof(int));
-  //packetlen += sizeof(int);
-  //memcpy(mypacket + packetlen, &qclass, sizeof(int));
-  //packetlen += sizeof(int);
   memcpy(mypacket + packetlen, q, sizeof(question));
   packetlen += sizeof(question);
+
+  // TODO For sake of debugging, remove later
+  if (packetlen != packet_size) {
+    fprintf(stderr, "Conflicting packet sizes");
+    return -1;
+  }
 
   dump_packet(mypacket, packetlen);
 
@@ -163,16 +162,6 @@ int main(int argc, char *argv[]) {
   out.sin_port = htons((short) 53); // TODO will need to change this
   out.sin_addr.s_addr = inet_addr(server);
 
-  // the size of a packet
-  //int packet_size = sizeof(packet_head) + qsize;
-  //unsigned char* mypacket = alloca(packet_size); // TODO need an actual size here, currently pseudo-code.
-                                                          // Not taking into account answer, authority, and additional fields
-  //memcpy(mypacket, &ph, sizeof(packet_head));
-  //memcpy(mypacket + sizeof(packet_head), qname, qnamelen);
-  //memcpy(mypacket + sizeof(packet_head) + qnamelen, &qtype, sizeof(int));
-  //memcpy(mypacket + sizeof(packet_head) + qnamelen + sizeof(int), &qclass, sizeof(int));
-
-  //dump_packet(mypacket, packet_size);
   if (sendto(sock, mypacket, packetlen, 0, (struct sockaddr*)&out, sizeof(out)) < 0) {
     // an error occurred
     fprintf(stderr, "ERROR IN SENDTO\n");

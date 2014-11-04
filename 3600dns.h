@@ -11,19 +11,6 @@
 
 #endif
 
-
-// size of this is 14 bits
-typedef struct flag_s {
-  unsigned int qr:1;
-  unsigned int opcode:4; // A standard query
-  unsigned int aa:1;
-  unsigned int tc:1;
-  unsigned int rd:1;
-  unsigned int ra:1;
-  unsigned int z:1;
-  unsigned int rcode:4;
-} flag;
-
 // size of this is 94 bits 
 typedef struct packet_head_s {
   unsigned int id:16;
@@ -34,8 +21,6 @@ typedef struct packet_head_s {
   unsigned int qr:1;
   unsigned int ra:1;
   unsigned int z:3;
-  unsigned int rcode:4;
-  //flag flags; // 14 bits
   unsigned int qdcount:16;
   unsigned int ancount:16;
   unsigned int nscount:16;
