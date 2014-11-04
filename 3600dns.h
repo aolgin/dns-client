@@ -27,11 +27,11 @@ typedef struct flag_s {
 // size of this is 94 bits 
 typedef struct packet_head_s {
   unsigned int id:16;
-  unsigned int qr:1;
-  unsigned int opcode:4; // A standard query
-  unsigned int aa:1;
-  unsigned int tc:1;
   unsigned int rd:1;
+  unsigned int tc:1;
+  unsigned int aa:1;
+  unsigned int opcode:4; // A standard query
+  unsigned int qr:1;
   unsigned int ra:1;
   unsigned int z:3;
   unsigned int rcode:4;
@@ -41,3 +41,8 @@ typedef struct packet_head_s {
   unsigned int nscount:16;
   unsigned int arcount:16;
 } packet_head;
+
+typedef struct question_s {
+  unsigned int qtype:16;
+  unsigned int qclass:16;
+} question;

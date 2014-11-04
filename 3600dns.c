@@ -24,7 +24,7 @@
 #include "3600dns.h"
 
 // The server all queries should be sent to
-static const char* server = "129.10.112.152";
+static const char* server = "@129.10.112.152";
 //static const int id_code_hex = 0x0539;
 static const int id_code = 1337;
 
@@ -113,28 +113,26 @@ int main(int argc, char *argv[]) {
   //
 
   // Set up the packet header
-
-
   packet_head* ph = alloca(sizeof(packet_head));
-  //flag* pf = alloca(sizeof(flag));
   ph->id = htons(id_code); // TODO should we be passing the hex or decimal value?
   ph->qr = 0;
   ph->opcode = 0;
   ph->rd = 1;
   ph->z = 0;
-  //ph->flags = *pf;
   ph->qdcount = htons(1);
   ph->ancount = htons(0);
   ph->nscount = htons(0);
   ph->arcount = htons(0);
 
   // Set up the question
-  int qnamelen = strlen(argv[2]);
-  int qsize = 32 + qnamelen;
   char* qname = argv[2];
-  int qtype = htons(1);
-  int qclass = htons(1);
-  
+  int qnamelen = strlen(qname);
+  int qsize = sizeof(question) + (qnamelen * sizeof(char));
+  //int qtype = htons(1);
+  //int qclass = htons(1);
+  question* q = alloca(sizeof(question));
+  q->qtype = htons(1);
+  q->qclass = htons(1);
 
   // send the DNS request (and call dump_packet with your request)
   // the size of a packet
@@ -145,15 +143,17 @@ int main(int argc, char *argv[]) {
   int packetlen = 0;
   memcpy(mypacket, ph, sizeof(packet_head));
   packetlen += sizeof(packet_head);
-  memcpy(mypacket + packetlen, qname, qnamelen);
-  packetlen += qnamelen;
-  memcpy(mypacket + packetlen, &qtype, sizeof(int));
-  packetlen += sizeof(int);
-  memcpy(mypacket + packetlen, &qclass, sizeof(int));
-  packetlen += sizeof(int);
+  memcpy(mypacket + packetlen, qname, qnamelen * sizeof(char));
+  packetlen += (qnamelen * sizeof(char));
+  //memcpy(mypacket + packetlen, &qtype, sizeof(int));
+  //packetlen += sizeof(int);
+  //memcpy(mypacket + packetlen, &qclass, sizeof(int));
+  //packetlen += sizeof(int);
+  memcpy(mypacket + packetlen, q, sizeof(question));
+  packetlen += sizeof(question);
 
   dump_packet(mypacket, packetlen);
-  
+
   // first, open a UDP socket  
   int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
   //dump_packet(mypacket, packet_size);
   if (sendto(sock, mypacket, packetlen, 0, (struct sockaddr*)&out, sizeof(out)) < 0) {
     // an error occurred
-    fprintf(stderr, "ERROR IN SENDTO");
+    fprintf(stderr, "ERROR IN SENDTO\n");
     return -1;
   }
 
