@@ -23,6 +23,8 @@
 
 #include "3600dns.h"
 
+void format_name(char* name, int len);
+
 static const char* server = "@129.10.112.152"; // The test server all queries should be sent to
 static const int id_code = 1337; // The query id for each outgoing packet
 
@@ -123,8 +125,15 @@ int main(int argc, char *argv[]) {
 
   // Set up the question
   question * q = alloca(sizeof(question));
-  const char* qname = argv[2];
-  int qnamelen = strlen(qname);
+  
+  // We need to parse the argument into a string with numerical
+  // information letting us know the length of each . delimeted
+  // part of the string
+  char* qname = argv[2];
+  int qnamelen = strlen(qname) + 1; // An extra byte for the prepended length
+  format_name(qname, qnamelen);
+  qnamelen++;
+
   int qsize = sizeof(question) + (qnamelen * sizeof(char));
   q->qtype = htons(1);
   q->qclass = htons(1);
@@ -133,15 +142,18 @@ int main(int argc, char *argv[]) {
   
   // the size of a packet
   int packet_size = sizeof(packet_head) + qsize;
-  unsigned char* mypacket = calloc(1, packet_size);//alloca(packet_size); // TODO need an actual size here, currently pseudo-code.
+  unsigned char* mypacket = alloca(packet_size);//alloca(packet_size); // TODO need an actual size here, currently pseudo-code.
                                                           // Not taking into account answer, authority, and additional fields
   
   // Copy the packet into the allocated address space
   int packetlen = 0;
+  // Copy the packet header
   memcpy(mypacket, ph, sizeof(packet_head));
   packetlen += sizeof(packet_head);
+  // Copy the question string
   memcpy(mypacket + packetlen, qname, qnamelen * sizeof(char));
   packetlen += (qnamelen * sizeof(char));
+  // Copy the rest of the question
   memcpy(mypacket + packetlen, q, sizeof(question));
   packetlen += sizeof(question);
 
@@ -196,4 +208,24 @@ int main(int argc, char *argv[]) {
   // print out the result
 */  
   return 0;
+}
+
+void format_name(char* name, int len) {
+  char result[len + 1];
+
+  int cur_len = 0;
+  for(int i = 0; i < len; i++) {
+    if (name[i] == '.' || name[i] == '\0') {
+      // Copy the current length and then the string until this point 
+      // into the result string starting at the i byte
+      memcpy(result + (i - cur_len), &cur_len, 1);
+      memcpy(result + (i - cur_len + 1), &name[i - cur_len], cur_len); 
+      cur_len = 0;
+    } else {
+      cur_len++;
+    }
+  }
+  result[len] = '\0';
+
+  strcpy(name, result);
 }
