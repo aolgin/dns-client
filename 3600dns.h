@@ -35,9 +35,8 @@ typedef struct question_s {
 
 // Basic structure for an answer, minus the name
 typedef struct answer_s {
-  unsigned int atype:16;
-  unsigned int aclass:16;
+  unsigned int type:16;
+  unsigned int class:16;
   unsigned int ttl:16;
   unsigned int rdlength:16;
-  unsigned int rdata:16;
-} answer; // size is 80 bits
+} answer; // size is 64 bits

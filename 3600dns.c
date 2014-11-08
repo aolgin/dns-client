@@ -200,9 +200,11 @@ int main(int argc, char *argv[]) {
 
   char* tmpbuf = alloca(MAX_PACKET_SIZE);
 
+  int res_len = 0;
   // wait to receive, or for a timeout
   if (select(sock + 1, &socks, NULL, NULL, &t)) {
-    if (recvfrom(sock, tmpbuf, <<input len>>, 0, &in, &in_len) < 0) {
+    res_len = recvfrom(sock, tmpbuf, MAX_PACKET_SIZE, 0, &in, &in_len);
+    if (res_len < 0) {
       // an error occured
       fprintf(stderr, "ERROR: An error occured in recvfrom\n");
     }
@@ -211,6 +213,31 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "ERROR: A Timeout occured when receiving a packet\n");
     return -1;
   }
+
+  printf("RECEIVED PACKET OF SIZE: %i\n", res_len);
+  dump_packet((unsigned char*)tmpbuf, res_len);
+
+  // Parse DNS Header
+  packet_head* a_packet_head = alloca(sizeof(packet_head));
+  memcpy(a_packet_head, tmpbuf, sizeof(packet_head));
+  tmpbuf += sizeof(packet_head);
+
+  // Parse NAME, should be same length as name we sent
+  char a_name[qnamelen];
+  memcpy(a_name, tmpbuf, qnamelen);
+  tmpbuf += qnamelen;
+
+  // Parse the rest of the answer 
+  answer* myanswer = alloca(sizeof(answer));
+  memcpy(myanswer, tmpbuf, sizeof(answer));
+  tmpbuf += sizeof(answer);
+
+  // Display answer data for debugging
+  printf("NAME: %s\n", a_name);
+  printf("TYPE: %i\n", ntohs(myanswer->type));
+  printf("CLASS: %i\n", ntohs(myanswer->class));
+  printf("TTL: %i\n", ntohs(myanswer->ttl));
+  printf("LEN: %i\n", ntohs(myanswer->rdlength));
 
   // print out the result
   return 0;
