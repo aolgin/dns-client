@@ -23,6 +23,9 @@
 
 #include "3600dns.h"
 
+int* port;
+char* server;
+
 /**
  * This function will print a hex dump of the provided packet to the screen
  * to help facilitate debugging.  In your milestone and final submission, you 
@@ -102,18 +105,25 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
 
-  char* server;
-  int* port;
+  // Set the server name appropriately, according to argc
   if (argc == 3) {
     server = argv[1];
   } else {
     server = argv[2];
   }
 
+  // If the given server name is not in the right format, throw error
+  if (*server != '@') {
+    fprintf(stderr, "Incorrect name format for query.\n\
+        Please use the following: @<server:port>\n\
+        If port is unspecified, the default (53) will be used\n");
+    return -1;
+  }
 
-
-  //TODO Parse server:port
-  // Currently just ignoring those and using the defaults
+  // Parse the server and port.
+  // Removes the '@', and will
+  // Fill in the server and port buffer with the proper values
+  port = alloca(sizeof(int));
   parse_server(server, port);
 
   // construct the DNS request
@@ -178,7 +188,7 @@ int main(int argc, char *argv[]) {
   // next, construct the destination address
   struct sockaddr_in out;
   out.sin_family = AF_INET;
-  out.sin_port = htons((short) &port); // TODO will need to change this
+  out.sin_port = htons((short) &port);
   out.sin_addr.s_addr = inet_addr(server);
 
   if (sendto(sock, mypacket, packetlen, 0, (struct sockaddr*)&out, sizeof(out)) < 0) {
@@ -246,16 +256,18 @@ void format_name(char* name, int len) {
 void parse_server(char* s, int* p) {
 
   // remove the '@' at the beginning
-  s = s+1; 
+  int tmp;
   char* end = strchr(s, ':');
  
   // If the given servername contains no ':', then no port is specified and the default should be used
   if (end == NULL) {
-    p = 53;
-  
+    tmp = 53;
   // otherwise, convert the end the string into an integer and set the port equal to it
   } else {
-    p = atoi(end+1);
+    tmp = atoi(end+1);
     *end = '\0';
   }
+
+  strcpy(s, s+1);
+  memcpy(p, &tmp, sizeof(int));
 }
