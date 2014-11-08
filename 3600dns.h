@@ -8,8 +8,14 @@
 #ifndef __3600DNS_H__
 #define __3600DNS_H__
 
+#define ID_CODE 1337 // The query id for each outgoing packet
+#define MAX_PACKET_SIZE 65536 // the maximum packet size
+#define TEST_SERVER "129.10.112.152" // the test server all queries should be sent to
 
 #endif
+
+void format_name(char* name, int len);
+void parse_server(char* s, int* p);
 
 // Basic structure for the packet header
 typedef struct packet_head_s {
@@ -33,11 +39,10 @@ typedef struct question_s {
   unsigned int qclass:16;
 } question; // size is 16 bits
 
-// Basic structure for an answer, minus the name
+// Basic structure for an answer, minus the name and rdata
 typedef struct answer_s {
   unsigned int atype:16;
   unsigned int aclass:16;
   unsigned int ttl:16;
   unsigned int rdlength:16;
-  unsigned int rdata:16;
 } answer; // size is 80 bits

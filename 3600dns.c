@@ -23,12 +23,6 @@
 
 #include "3600dns.h"
 
-void format_name(char* name, int len);
-
-static const char* server = "129.10.112.152"; // The test server all queries should be sent to
-static const int id_code = 1337; // The query id for each outgoing packet
-static int MAX_PACKET_SIZE = 65536; // maximum size of a packet
-
 /**
  * This function will print a hex dump of the provided packet to the screen
  * to help facilitate debugging.  In your milestone and final submission, you 
@@ -102,20 +96,31 @@ int main(int argc, char *argv[]) {
   if (argc < 3 || argc > 4) {
     fprintf(stderr, "Correct usage is './3600dns [-ns|-ms] @<server:port> <name>'\n\
         port(optional): the UDP port number of the DNS server. Default value is 53\n\
-        -ns|-ms (optional): specify whether this is a name or mail server query \n\
+        -ns|-ms (opti:onal): specify whether this is a name or mail server query \n\
         server (required): The IP address of the DNS server, in a.b.c.d format\n\
         name (required): the name to query for\n");
     exit(1);
   }
 
+  char* server;
+  int* port;
+  if (argc == 3) {
+    server = argv[1];
+  } else {
+    server = argv[2];
+  }
+
+
+
   //TODO Parse server:port
   // Currently just ignoring those and using the defaults
+  parse_server(server, port);
 
   // construct the DNS request
 
   // Set up the packet header
   packet_head* ph = alloca(sizeof(packet_head));
-  ph->id = htons(id_code);
+  ph->id = htons(ID_CODE);
   ph->qr = 0;
   ph->opcode = 0;
   ph->rd = 1;
@@ -173,7 +178,7 @@ int main(int argc, char *argv[]) {
   // next, construct the destination address
   struct sockaddr_in out;
   out.sin_family = AF_INET;
-  out.sin_port = htons((short) 53); // TODO will need to change this
+  out.sin_port = htons((short) &port); // TODO will need to change this
   out.sin_addr.s_addr = inet_addr(server);
 
   if (sendto(sock, mypacket, packetlen, 0, (struct sockaddr*)&out, sizeof(out)) < 0) {
@@ -183,7 +188,7 @@ int main(int argc, char *argv[]) {
   }
 
   /* END MILESTONE MARK AREA */
-
+/*
   // wait for the DNS reply (timeout: 5 seconds)
   struct sockaddr_in in;
   socklen_t in_len;
@@ -199,7 +204,7 @@ int main(int argc, char *argv[]) {
   t.tv_usec = 0;
 
   char* tmpbuf = alloca(MAX_PACKET_SIZE);
-
+  
   // wait to receive, or for a timeout
   if (select(sock + 1, &socks, NULL, NULL, &t)) {
     if (recvfrom(sock, tmpbuf, <<input len>>, 0, &in, &in_len) < 0) {
@@ -211,7 +216,7 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "ERROR: A Timeout occured when receiving a packet\n");
     return -1;
   }
-
+*/
   // print out the result
   return 0;
 }
@@ -234,4 +239,23 @@ void format_name(char* name, int len) {
   result[len] = '\0';
 
   strcpy(name, result);
+}
+
+// Parse the server input so that we can extract a port, if supplied
+// Modify the buffers given
+void parse_server(char* s, int* p) {
+
+  // remove the '@' at the beginning
+  s = s+1; 
+  char* end = strchr(s, ':');
+ 
+  // If the given servername contains no ':', then no port is specified and the default should be used
+  if (end == NULL) {
+    p = 53;
+  
+  // otherwise, convert the end the string into an integer and set the port equal to it
+  } else {
+    p = atoi(end+1);
+    *end = '\0';
+  }
 }
