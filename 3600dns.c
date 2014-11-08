@@ -98,9 +98,10 @@ int main(int argc, char *argv[]) {
   // process the arguments
 
   // If the improper amount of arguments is supplied
-  if (argc != 3) {
-    fprintf(stderr, "Correct usage is './3600dns @<server:port> <name>'\n\
+  if (argc < 3 || argc > 4) {
+    fprintf(stderr, "Correct usage is './3600dns [-ns|-ms] @<server:port> <name>'\n\
         port(optional): the UDP port number of the DNS server. Default value is 53\n\
+        -ns|-ms (optional): specify whether this is a name or mail server query \n\
         server (required): The IP address of the DNS server, in a.b.c.d format\n\
         name (required): the name to query for\n");
     exit(1);
