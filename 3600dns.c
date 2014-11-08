@@ -25,8 +25,9 @@
 
 void format_name(char* name, int len);
 
-static const char* server = "@129.10.112.152"; // The test server all queries should be sent to
+static const char* server = "129.10.112.152"; // The test server all queries should be sent to
 static const int id_code = 1337; // The query id for each outgoing packet
+static int MAX_PACKET_SIZE = 65536; // maximum size of a packet
 
 /**
  * This function will print a hex dump of the provided packet to the screen
@@ -177,12 +178,12 @@ int main(int argc, char *argv[]) {
 
   if (sendto(sock, mypacket, packetlen, 0, (struct sockaddr*)&out, sizeof(out)) < 0) {
     // an error occurred
-    //fprintf(stderr, "ERROR IN SENDTO\n");
+    fprintf(stderr, "ERROR IN SENDTO\n");
     return -1;
   }
 
-  /* MILESTONE MARK AREA */
-/*
+  /* END MILESTONE MARK AREA */
+
   // wait for the DNS reply (timeout: 5 seconds)
   struct sockaddr_in in;
   socklen_t in_len;
@@ -194,20 +195,24 @@ int main(int argc, char *argv[]) {
 
   // construct the timeout
   struct timeval t;
-  t.tv_sec = <<your timeout in seconds>>;
+  t.tv_sec = 5; // temporary value? TODO
   t.tv_usec = 0;
+
+  char* tmpbuf = alloca(MAX_PACKET_SIZE);
 
   // wait to receive, or for a timeout
   if (select(sock + 1, &socks, NULL, NULL, &t)) {
-    if (recvfrom(sock, <<your input buffer>>, <<input len>>, 0, &in, &in_len) < 0) {
+    if (recvfrom(sock, tmpbuf, <<input len>>, 0, &in, &in_len) < 0) {
       // an error occured
+      fprintf(stderr, "ERROR: An error occured in recvfrom\n");
     }
   } else {
-    // a timeout occurred
+    // a timeout occurredi
+    fprintf(stderr, "ERROR: A Timeout occured when receiving a packet\n");
+    return -1;
   }
 
   // print out the result
-*/  
   return 0;
 }
 
