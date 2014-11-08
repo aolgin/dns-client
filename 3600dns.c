@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
 
   if (sendto(sock, mypacket, packetlen, 0, (struct sockaddr*)&out, sizeof(out)) < 0) {
     // an error occurred
-    fprintf(stderr, "ERROR IN SENDTO\n");
+    //fprintf(stderr, "ERROR IN SENDTO\n");
     return -1;
   }
 
