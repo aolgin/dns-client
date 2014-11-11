@@ -25,6 +25,7 @@
 
 int* port;
 char* server;
+unsigned int querytype;
 
 /**
  * This function will print a hex dump of the provided packet to the screen
@@ -93,23 +94,38 @@ int main(int argc, char *argv[]) {
    * get you started.
    */
 
-  // process the arguments
+  ////////// process the arguments ///////////
 
   // If the improper amount of arguments is supplied
   if (argc < 3 || argc > 4) {
     fprintf(stderr, "Correct usage is './3600dns [-ns|-ms] @<server:port> <name>'\n\
         port(optional): the UDP port number of the DNS server. Default value is 53\n\
-        -ns|-ms (opti:onal): specify whether this is a name or mail server query \n\
+        -ns|-ms (optional): specify whether this is a name or mail server query \n\
         server (required): The IP address of the DNS server, in a.b.c.d format\n\
         name (required): the name to query for\n");
     exit(1);
   }
+
+  // Set the query type to an A record by default
+  querytype = 1;
 
   // Set the server name appropriately, according to argc
   if (argc == 3) {
     server = argv[1];
   } else {
     server = argv[2];
+
+    // Set the query type to a Name Server Record
+    if (strcmp(argv[1], "-ns")) {
+      querytype = 2;
+    // Set the query type to a Mail Exchange Record
+    } else if (strcmp(argv[1], "-mx")) {
+      querytype = 15;
+    } else {
+      fprintf(stderr, "Flag is not recognized. Please either leave blank\n\
+          or use either '-mx' or '-ns'\n");
+      return -1;
+    }
   }
 
   // If the given server name is not in the right format, throw error
@@ -126,7 +142,7 @@ int main(int argc, char *argv[]) {
   port = alloca(sizeof(int));
   parse_server(server, port);
 
-  // construct the DNS request
+  ////////// construct the DNS request ////////////
 
   // Set up the packet header
   packet_head* ph = alloca(sizeof(packet_head));
@@ -152,7 +168,7 @@ int main(int argc, char *argv[]) {
   qnamelen++;
 
   int qsize = sizeof(question) + (qnamelen * sizeof(char));
-  q->qtype = htons(1);
+  q->qtype = htons(querytype);
   q->qclass = htons(1);
 
   // send the DNS request (and call dump_packet with your request)
@@ -197,7 +213,7 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  /* END MILESTONE MARK AREA */
+  /*  ///////////// END MILESTONE MARK AREA //////////// */
   // wait for the DNS reply (timeout: 5 seconds)
   struct sockaddr_in in;
   socklen_t in_len;
@@ -221,6 +237,7 @@ int main(int argc, char *argv[]) {
     if (res_len < 0) {
       // an error occured
       fprintf(stderr, "ERROR: An error occured in recvfrom\n");
+      return -1;
     }
   } else {
     // a timeout occurredi
@@ -254,8 +271,11 @@ int main(int argc, char *argv[]) {
   printf("LEN: %i\n", ntohs(myanswer->rdlength));
 
   // print out the result
+  // TODO will need to take into account the atype
   return 0;
 }
+
+
 
 void format_name(char* name, int len) {
   char result[len + 1];
@@ -278,10 +298,10 @@ void format_name(char* name, int len) {
 }
 
 // Parse the server input so that we can extract a port, if supplied
-// Modify the buffers given
+// Modify the buffers given so that s becomes the name without a port or @
+// and that the p points to the appropriate port
 void parse_server(char* s, int* p) {
 
-  // remove the '@' at the beginning
   int tmp;
   char* end = strchr(s, ':');
  
@@ -293,7 +313,8 @@ void parse_server(char* s, int* p) {
     tmp = atoi(end+1);
     *end = '\0';
   }
-
+  
+  // remove the @
   strcpy(s, s+1);
   memcpy(p, &tmp, sizeof(int));
 }
