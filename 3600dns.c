@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
   // next, construct the destination address
   struct sockaddr_in out;
   out.sin_family = AF_INET;
-  out.sin_port = htons((short) &port);
+  out.sin_port = htons((short) *port);
   out.sin_addr.s_addr = inet_addr(server);
 
   if (sendto(sock, mypacket, packetlen, 0, (struct sockaddr*)&out, sizeof(out)) < 0) {
