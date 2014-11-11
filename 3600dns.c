@@ -126,6 +126,7 @@ int main(int argc, char *argv[]) {
           or use either '-mx' or '-ns'\n");
       return -1;
     }
+  }
 
   // If the given server name is not in the right format, throw error
   if (*server != '@') {
