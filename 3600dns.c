@@ -121,11 +121,11 @@ int main(int argc, char *argv[]) {
     // Set the query type to a Mail Exchange Record
     } else if (strcmp(argv[1], "-mx")) {
       querytype = 15;
+    } else {
+      fprintf(stderr, "Flag is not recognized. Please either leave blank\n\
+          or use either '-mx' or '-ns'\n");
+      return -1;
     }
-    //TODO
-    // Currently just ignores the flag if it is not one of the above
-    // and just uses the default record type
-  }
 
   // If the given server name is not in the right format, throw error
   if (*server != '@') {

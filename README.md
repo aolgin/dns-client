@@ -30,8 +30,8 @@ A few things to note:
 * If the server argument is not supplied with an '@', an error will be thrown for malformed input
 * If no port is specified, then the port will be set 53
 * If no query type is specified, then the query type will be set to 1 (A record)
-* If 3 arguments are supplied with the executable, and a flag besides '-ns' or '-mx' is given, then it will be ignored
-  and the program will handle the query as if it were querying an A record
+* If 3 arguments are supplied with the executable, and a flag besides '-ns' or '-mx' is given, then an error
+  will be thrown about malformed input
 
 Our Approach
 ============
