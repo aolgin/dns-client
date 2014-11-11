@@ -248,15 +248,26 @@ int main(int argc, char *argv[]) {
   printf("RECEIVED PACKET OF SIZE: %i\n", res_len);
   dump_packet((unsigned char*)tmpbuf, res_len);
 
+  // Keep the original pointer for later reference
+  og_buffer = tmpbuf;
+
   // Parse DNS Header
-  packet_head* a_packet_head = alloca(sizeof(packet_head));
-  memcpy(a_packet_head, tmpbuf, sizeof(packet_head));
+  packet_head* r_packet_head = alloca(sizeof(packet_head));
+  memcpy(r_packet_head, tmpbuf, sizeof(packet_head));
   tmpbuf += sizeof(packet_head);
 
-  // Parse NAME, should be same length as name we sent
-  char a_name[qnamelen];
-  memcpy(a_name, tmpbuf, qnamelen);
-  tmpbuf += qnamelen;
+  // Move the pointer past the question, which we've already stored
+  tmpbuf += qsize;
+
+  // Parse the name of the answer
+  // Check if the first two bits are 11
+  if ((tmpbuf & 192) == 192) {
+    // This is a pointer to a string elsewhere
+    char* a_name = parse_pointer_str(&tmpbuf, og_buffer);
+  } else {
+    // The string is right here
+    char* a_name = parse_static_str(&tmpbuf);
+  }
 
   // Parse the rest of the answer 
   answer* myanswer = alloca(sizeof(answer));
@@ -264,7 +275,7 @@ int main(int argc, char *argv[]) {
   tmpbuf += sizeof(answer);
 
   // Display answer data for debugging
-  printf("NAME: %s\n", a_name);
+  printf("#Answers: %i\n", r_packet_head->ancount);
   printf("TYPE: %i\n", ntohs(myanswer->type));
   printf("CLASS: %i\n", ntohs(myanswer->class));
   printf("TTL: %i\n", ntohs(myanswer->ttl));
@@ -317,4 +328,20 @@ void parse_server(char* s, int* p) {
   // remove the @
   strcpy(s, s+1);
   memcpy(p, &tmp, sizeof(int));
+}
+
+// Uses the pointer offset to parse the name string from the original buffer
+// and moves the buffer pointer past 
+char* parse_pointer_str(char** buf_ptr, char* og_buf) {
+  char* buf = *buf_ptr;
+
+  
+
+  *buf_ptr = buf;
+}
+
+// Return a pointer to a string that contains the name from the buffer
+// and move the buffer forward past the name
+char* parse_static_str(char** buf) {
+
 }
