@@ -7,8 +7,12 @@ Make Commands
 =============
 
 make - compile the code
-make test - run the given test script
+make test - compile the code and run the given test script
 make clean - remove all executables
+make utest - compile and run the unittests
+make debug - run gdb on the unit test executable
+make cleanall - remove all associated executables
+make unittests - compile the unit tests
 
 Correct Usage
 =============
