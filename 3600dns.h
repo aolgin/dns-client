@@ -17,7 +17,7 @@
 void format_name(char* name, int len);
 void parse_server(char* s, int* p);
 char* parse_pointer_str(char** buf_ptr, char* og_buf);
-char* parse_static_str(char** buf);
+char* parse_static_str(char** buf_ptr, char* og_buf);
 
 // Basic structure for the packet header
 typedef struct packet_head_s {

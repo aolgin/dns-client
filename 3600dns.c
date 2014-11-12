@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
   dump_packet((unsigned char*)tmpbuf, res_len);
 
   // Keep the original pointer for later reference
-  og_buffer = tmpbuf;
+  char* og_buffer = tmpbuf;
 
   // Parse DNS Header
   packet_head* r_packet_head = alloca(sizeof(packet_head));
@@ -261,13 +261,16 @@ int main(int argc, char *argv[]) {
 
   // Parse the name of the answer
   // Check if the first two bits are 11
-  if ((tmpbuf & 192) == 192) {
+  char* a_name;
+  if (((int)*tmpbuf & 192) == 192) {
     // This is a pointer to a string elsewhere
-    char* a_name = parse_pointer_str(&tmpbuf, og_buffer);
+    a_name = parse_pointer_str(&tmpbuf, og_buffer);
   } else {
     // The string is right here
-    char* a_name = parse_static_str(&tmpbuf);
+    a_name = parse_static_str(&tmpbuf, og_buffer);
   }
+
+  printf("AnswerName: %s\n", a_name);
 
   // Parse the rest of the answer 
   answer* myanswer = alloca(sizeof(answer));
@@ -351,35 +354,41 @@ char* parse_pointer_str(char** buf_ptr, char* og_buf) {
   // Move the buffer past the NAME pointer
   *buf_ptr = buf + 2;
 
-  return parse_static_str(offset_buf);
+  return parse_static_str(&offset_buf, og_buf);
 }
 
 // Return a pointer to a string that contains the name from the buffer
 // and move the buffer forward past the name
-char* parse_static_str(char** buf_ptr, char** og_buf) {
+char* parse_static_str(char** buf_ptr, char* og_buf) {
   char* buf = *buf_ptr;
 
   // The result string
   char* result = NULL;
 
+  // Iterate through the string until we hit the null bit
   int i = 0;
   int result_size;
   while (buf[i] != '\0') {
-    if (result == NULL) { result_size = 0; } else { result_size = strlen(result); }
+    // The size of result is 0 if result is NULL
+    if (result == NULL) { result_size = 0; } 
+    else { result_size = strlen(result); }
+    
     if ((buf[i] & 192) == 192) {
-      char* s = parse_pointer_str(buf, og_buf);
-      realloc(result, result_size + strlen(s));
+      // This is a pointer to another static string, 
+      // parse it and add it to the result
+      // Get a pointer to the location of the pointer in the buffer
+      char* ptr_loc = buf + i;
+      char* s = parse_pointer_str(&ptr_loc, og_buf);
+      result = realloc(result, result_size + strlen(s));
       strncpy(result + result_size, s, strlen(s));
     } else {
-      strncpy(result + result_size, buf[i], 1);
+      // Just add this byte from the buffer
+      strncpy(result + result_size, buf + i, 1);
     }
     i++;
   }
+  // Move our buffer pointer past the string we just parsed
   *buf_ptr = buf + i;
   return result;
 }
 
-// copy name to heap
-// move buffer to end of name + 1
-//
-//
