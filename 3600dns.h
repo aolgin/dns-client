@@ -67,7 +67,7 @@ typedef struct question_s {
 typedef struct answer_s {
   unsigned int type:16;
   unsigned int class:16;
-  unsigned int ttl:16;
+  unsigned int ttl:32;
   unsigned int rdlength:16;
 } answer; // size is 64 bits
 

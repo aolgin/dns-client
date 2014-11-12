@@ -255,14 +255,25 @@ int main(int argc, char *argv[]) {
   // Parse the rest of the answer 
   answer* myanswer = alloca(sizeof(answer));
   memcpy(myanswer, tmpbuf, sizeof(answer));
-  tmpbuf += sizeof(answer);
+  tmpbuf += 10;
+
+  // This is an IP address
+  uint32_t ip;
+  if (ntohs(myanswer->type) == 1) {
+    // IP Addresses are 4 bytes
+    memcpy(&ip, tmpbuf, ntohs(myanswer->rdlength));
+  }
+  struct in_addr ip_addr;
+  ip_addr.s_addr = ip;
 
   // Display answer data for debugging
-  printf("#Answers: %i\n", r_packet_head->ancount);
+  printf("#Answers: %i\n", ntohs(r_packet_head->ancount));
   printf("TYPE: %i\n", ntohs(myanswer->type));
   printf("CLASS: %i\n", ntohs(myanswer->class));
   printf("TTL: %i\n", ntohs(myanswer->ttl));
   printf("LEN: %i\n", ntohs(myanswer->rdlength));
+  printf("IP: %s\n", inet_ntoa(ip_addr));
+
 
   // print out the result
   // TODO will need to take into account the atype
