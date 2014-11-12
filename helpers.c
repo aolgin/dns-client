@@ -51,8 +51,8 @@ char* parse_pointer_str(char** buf_ptr, char* og_buf) {
   // Pointer bytes are the two bytes that comprise the pointer,
   // e.g. 1100 1011
   // to get this as an integer we take the first byte and shift it
-  // to the left 4, then add the second byte
-  int pointer_bytes = ((int)buf[0] << 4) + (int)buf[1]; 
+  // to the left 8, then add the second byte
+  int pointer_bytes = ((int)buf[0] << 8) + (int)buf[1]; 
   // To get the offset we have to mask off the first two bits of the 
   // 16 bit integer (0011 1111 1111 1111 = base2(16383))
   int offset = 16383 & pointer_bytes;
@@ -91,6 +91,7 @@ char* parse_static_str(char** buf_ptr, char* og_buf) {
       result = realloc(result, result_size + strlen(s));
       strncpy(result + result_size, s, strlen(s));
     } else {
+      result = realloc(result, result_size + 1);
       // Just add this byte from the buffer
       strncpy(result + result_size, buf + i, 1);
     }
