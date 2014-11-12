@@ -342,6 +342,30 @@ char* parse_pointer_str(char** buf_ptr, char* og_buf) {
 
 // Return a pointer to a string that contains the name from the buffer
 // and move the buffer forward past the name
-char* parse_static_str(char** buf) {
+char* parse_static_str(char** buf_ptr, char** og_buf) {
+  char* buf = *buf_ptr;
 
+  // The result string
+  char* result = NULL;
+
+  int i = 0;
+  int result_size;
+  while (buf[i] != '\0') {
+    if (result == NULL) { result_size = 0; } else { result_size = strlen(result); }
+    if ((buf[i] & 192) == 192) {
+      char* s = parse_pointer_str(buf, og_buf);
+      realloc(result, result_size + strlen(s));
+      strncpy(result + result_size, s, strlen(s));
+    } else {
+      strncpy(result + result_size, buf[i], 1);
+    }
+    i++;
+  }
+  *buf_ptr = buf + i;
+  return result;
 }
+
+// copy name to heap
+// move buffer to end of name + 1
+//
+//
