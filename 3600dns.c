@@ -335,9 +335,23 @@ void parse_server(char* s, int* p) {
 char* parse_pointer_str(char** buf_ptr, char* og_buf) {
   char* buf = *buf_ptr;
 
-  
+  // Find the offset of the NAME data
+  // Pointer bytes are the two bytes that comprise the pointer,
+  // e.g. 1100 1011
+  // to get this as an integer we take the first byte and shift it
+  // to the left 4, then add the second byte
+  int pointer_bytes = ((int)buf[0] << 4) + (int)buf[1]; 
+  // To get the offset we have to mask off the first two bits of the 
+  // 16 bit integer (0011 1111 1111 1111 = base2(16383))
+  int offset = 16383 & pointer_bytes;
 
-  *buf_ptr = buf;
+  // Get the pointer to the offset
+  char* offset_buf = og_buf + offset;
+
+  // Move the buffer past the NAME pointer
+  *buf_ptr = buf + 2;
+
+  return parse_static_str(offset_buf);
 }
 
 // Return a pointer to a string that contains the name from the buffer
