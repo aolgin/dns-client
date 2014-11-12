@@ -12,7 +12,29 @@
 #define MAX_PACKET_SIZE 65536 // the maximum packet size
 #define TEST_SERVER "129.10.112.152" // the test server all queries should be sent to
 
-#endif
+#define _POSIX_C_SOURCE 1
+
+#include "helpers.h"
+#include <math.h>
+#include <ctype.h>
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <netdb.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <alloca.h>
+
+
+int* port;
+char* server;
+unsigned int querytype;
 
 void format_name(char* name, int len);
 void parse_server(char* s, int* p);
@@ -48,3 +70,5 @@ typedef struct answer_s {
   unsigned int ttl:16;
   unsigned int rdlength:16;
 } answer; // size is 64 bits
+
+#endif
