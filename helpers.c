@@ -90,6 +90,7 @@ char* parse_static_str(char** buf_ptr, char* og_buf) {
       char* s = parse_pointer_str(&ptr_loc, og_buf);
       result = realloc(result, result_size + strlen(s));
       strncpy(result + result_size, s, strlen(s));
+      break;
     } else {
       result = realloc(result, result_size + 1);
       // Just add this byte from the buffer

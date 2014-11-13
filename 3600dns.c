@@ -216,17 +216,17 @@ int main(int argc, char *argv[]) {
     res_len = recvfrom(sock, tmpbuf, MAX_PACKET_SIZE, 0, &in, &in_len);
     if (res_len < 0) {
       // an error occured
-      fprintf(stderr, "ERROR: An error occured in recvfrom\n");
+      fprintf(stderr, "NORESPONSE\n");
       return -1;
     }
   } else {
     // a timeout occurredi
-    fprintf(stderr, "ERROR: A Timeout occured when receiving a packet\n");
+    fprintf(stderr, "NORESPONSE\n");
     return -1;
   }
 
-  printf("RECEIVED PACKET OF SIZE: %i\n", res_len);
-  dump_packet((unsigned char*)tmpbuf, res_len);
+  //printf("RECEIVED PACKET OF SIZE: %i\n", res_len);
+  //dump_packet((unsigned char*)tmpbuf, res_len);
 
   // Keep the original pointer for later reference
   char* og_buffer = tmpbuf;
@@ -239,43 +239,85 @@ int main(int argc, char *argv[]) {
   // Move the pointer past the question, which we've already stored
   tmpbuf += qsize;
 
-  // Parse the name of the answer
-  // Check if the first two bits are 11
-  char* a_name;
-  if (((int)*tmpbuf & 192) == 192) {
-    // This is a pointer to a string elsewhere
-    a_name = parse_pointer_str(&tmpbuf, og_buffer);
-  } else {
-    // The string is right here
-    a_name = parse_static_str(&tmpbuf, og_buffer);
+  // Create an array of answers and of rdata
+  answer* answers[r_packet_head->ancount];
+  char* rdatas[r_packet_head->ancount];
+
+  // Parse each answer and add it to the array
+  for (int i = 0; i < ntohs(r_packet_head->ancount); i++) { 
+
+    // Parse the name of the answer
+    // Check if the first two bits are 11
+    char* a_name;
+    if (((int)*tmpbuf & 192) == 192) {
+      // This is a pointer to a string elsewhere
+      a_name = parse_pointer_str(&tmpbuf, og_buffer);
+    } else {
+      // The string is right here
+      a_name = parse_static_str(&tmpbuf, og_buffer);
+    }
+
+    //printf("AnswerName: %s\n", a_name);
+
+    // Parse the rest of the answer 
+    answer* myanswer = alloca(sizeof(answer));
+    memcpy(myanswer, tmpbuf, sizeof(answer));
+    tmpbuf += 10;
+
+    // Store the answer in the array
+    answers[i] = myanswer;
+    
+    // Get the RDATA
+    rdatas[i] = alloca(ntohs(myanswer->rdlength));
+    memcpy(rdatas[i], tmpbuf, ntohs(myanswer->rdlength));
+    tmpbuf += ntohs(myanswer->rdlength);
   }
-
-  printf("AnswerName: %s\n", a_name);
-
-  // Parse the rest of the answer 
-  answer* myanswer = alloca(sizeof(answer));
-  memcpy(myanswer, tmpbuf, sizeof(answer));
-  tmpbuf += 10;
-
-  // This is an IP address
-  uint32_t ip;
-  if (ntohs(myanswer->type) == 1) {
-    // IP Addresses are 4 bytes
-    memcpy(&ip, tmpbuf, ntohs(myanswer->rdlength));
-  }
-  struct in_addr ip_addr;
-  ip_addr.s_addr = ip;
 
   // Display answer data for debugging
+  /* 
   printf("#Answers: %i\n", ntohs(r_packet_head->ancount));
   printf("TYPE: %i\n", ntohs(myanswer->type));
   printf("CLASS: %i\n", ntohs(myanswer->class));
   printf("TTL: %i\n", ntohs(myanswer->ttl));
   printf("LEN: %i\n", ntohs(myanswer->rdlength));
   printf("IP: %s\n", inet_ntoa(ip_addr));
-
+  */
 
   // print out the result
-  // TODO will need to take into account the atype
+  char* auth;
+  if (r_packet_head->aa == 1) {
+    auth = "auth";
+  }
+  else {
+    auth = "nonauth";
+  }
+  for (int i = 0; i < ntohs(r_packet_head->ancount); i++) {
+    // Check if an IP or a CNAME
+    if (ntohs(answers[i]->type) == 1) {
+      uint32_t ip;
+      memcpy(&ip, rdatas[i], 4);
+      struct in_addr ip_addr;
+      ip_addr.s_addr = ip;
+
+      printf("IP\t%s\t%s\n", inet_ntoa(ip_addr), auth);
+    }
+
+    if (ntohs(answers[i]->type) == 5) {
+      char* name;
+      if (((int)*rdatas[i] & 192) == 192) {
+        // This is a pointer to a string elsewhere
+        name = parse_pointer_str(&rdatas[i], og_buffer);
+      } else {
+        // The string is right here
+        name = parse_static_str(&rdatas[i], og_buffer);
+      } 
+
+      printf("CNAME\t%s\t%s\n", name, auth);
+    } 
+  }
+
+  if (ntohs(r_packet_head->ancount) == 0) {
+    printf("NOTFOUND\n");
+  }
   return 0;
 }
