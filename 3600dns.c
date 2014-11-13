@@ -131,6 +131,9 @@ int main(int argc, char *argv[]) {
   ph->opcode = 0;
   ph->rd = 1;
   ph->z = 0;
+  ph->ra = htons(0); // may not need to set? TODO
+  ph->tc = 0;
+  ph->aa = 0;
   ph->qdcount = htons(1);
   ph->ancount = htons(0);
   ph->nscount = htons(0);
@@ -155,9 +158,8 @@ int main(int argc, char *argv[]) {
   
   // the size of a packet
   int packet_size = sizeof(packet_head) + qsize;
-  unsigned char* mypacket = alloca(packet_size);//alloca(packet_size); // TODO need an actual size here, currently pseudo-code.
-                                                          // Not taking into account answer, authority, and additional fields
-  
+  unsigned char* mypacket = alloca(packet_size);
+                                               
   // Copy the packet into the allocated address space
   int packetlen = 0;
   // Copy the packet header
@@ -170,12 +172,7 @@ int main(int argc, char *argv[]) {
   memcpy(mypacket + packetlen, q, sizeof(question));
   packetlen += sizeof(question);
 
-  // TODO For sake of debugging, remove later
-  if (packetlen != packet_size) {
-    fprintf(stderr, "Conflicting packet sizes");
-    return -1;
-  }
-
+  mypacket[3] = '\000';
   dump_packet(mypacket, packetlen);
 
   // first, open a UDP socket  
@@ -205,7 +202,7 @@ int main(int argc, char *argv[]) {
 
   // construct the timeout
   struct timeval t;
-  t.tv_sec = 5; // temporary value? TODO
+  t.tv_sec = 5;
   t.tv_usec = 0;
 
   char* tmpbuf = alloca(MAX_PACKET_SIZE);
@@ -213,15 +210,15 @@ int main(int argc, char *argv[]) {
   int res_len = 0;
   // wait to receive, or for a timeout
   if (select(sock + 1, &socks, NULL, NULL, &t)) {
-    res_len = recvfrom(sock, tmpbuf, MAX_PACKET_SIZE, 0, &in, &in_len);
+    res_len = recvfrom(sock, tmpbuf, MAX_PACKET_SIZE, 0, (struct sockaddr*)&in, &in_len);
     if (res_len < 0) {
       // an error occured
-      fprintf(stderr, "NORESPONSE\n");
+      fprintf(stdout, "NORESPONSE\n");
       return -1;
     }
   } else {
-    // a timeout occurredi
-    fprintf(stderr, "NORESPONSE\n");
+    // a timeout occurred
+    fprintf(stdout, "NORESPONSE\n");
     return -1;
   }
 

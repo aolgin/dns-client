@@ -23,6 +23,4 @@ clean:
 	rm $(TARGET)
 
 cleanall:
-	rm $(TARGET)
-	rm utests
-
+	rm $(TARGET) utests
