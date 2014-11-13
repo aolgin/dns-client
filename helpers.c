@@ -1,5 +1,14 @@
 #include "helpers.h"
 
+void unformat_name(char* name) {
+  int i = 0;
+  while(name[i] != '\0') {
+    int jump = name[i];
+    name[i] = '.';
+    i += (jump + 1);
+  }
+}
+
 void format_name(char* name, int len) {
   char result[len + 1];
 

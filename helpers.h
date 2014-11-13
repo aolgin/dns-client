@@ -15,7 +15,7 @@
 #include <alloca.h>
 
 #define TEST_SERVER1 "129.10.112.152" // the test server all queries should be sent to
-
+void unformat_name(char* name);
 void format_name(char* name, int len);
 void parse_server(char* s, int* p);
 char* parse_pointer_str(char** buf_ptr, char* og_buf);

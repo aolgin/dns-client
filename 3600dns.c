@@ -308,7 +308,8 @@ int main(int argc, char *argv[]) {
         // The string is right here
         name = parse_static_str(&rdatas[i], og_buffer);
       } 
-
+      unformat_name(name);
+      name++;
       printf("CNAME\t%s\t%s\n", name, auth);
     } 
   }
