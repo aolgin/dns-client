@@ -77,10 +77,9 @@ int main(int argc, char *argv[]) {
   ////////// process the arguments ///////////
 
   // If the improper amount of arguments is supplied
-  if (argc < 3 || argc > 4) {
-    fprintf(stderr, "Correct usage is './3600dns [-ns|-ms] @<server:port> <name>'\n\
+  if (argc !=  3) {
+    fprintf(stderr, "Correct usage is './3600dns @<server:port> <name>'\n\
         port(optional): the UDP port number of the DNS server. Default value is 53\n\
-        -ns|-ms (optional): specify whether this is a name or mail server query \n\
         server (required): The IP address of the DNS server, in a.b.c.d format\n\
         name (required): the name to query for\n");
     exit(1);
@@ -90,11 +89,13 @@ int main(int argc, char *argv[]) {
   querytype = 1;
 
   // Set the server name appropriately, according to argc
-  if (argc == 3) {
-    server = argv[1];
-  } else {
-    server = argv[2];
+  //if (argc == 3) {
+  //  server = argv[1];
+  //} else {
+  server = argv[1];
 
+    /*
+     * ---------Set-up for mx and ns support-------
     // Set the query type to a Name Server Record
     if (strcmp(argv[1], "-ns")) {
       querytype = 2;
@@ -105,8 +106,8 @@ int main(int argc, char *argv[]) {
       fprintf(stderr, "Flag is not recognized. Please either leave blank\n\
           or use either '-mx' or '-ns'\n");
       return -1;
-    }
-  }
+    } */
+  //}
 
   // If the given server name is not in the right format, throw error
   if (*server != '@') {
@@ -270,24 +271,11 @@ int main(int argc, char *argv[]) {
     tmpbuf += ntohs(myanswer->rdlength);
   }
 
-  // Display answer data for debugging
-  /* 
-  printf("#Answers: %i\n", ntohs(r_packet_head->ancount));
-  printf("TYPE: %i\n", ntohs(myanswer->type));
-  printf("CLASS: %i\n", ntohs(myanswer->class));
-  printf("TTL: %i\n", ntohs(myanswer->ttl));
-  printf("LEN: %i\n", ntohs(myanswer->rdlength));
-  printf("IP: %s\n", inet_ntoa(ip_addr));
-  */
-
   // print out the result
   char* auth;
-  if (r_packet_head->aa == 1) {
-    auth = "auth";
-  }
-  else {
-    auth = "nonauth";
-  }
+  if (r_packet_head->aa == 1) { auth = "auth"; }
+  else { auth = "nonauth"; }
+
   for (int i = 0; i < ntohs(r_packet_head->ancount); i++) {
     // Check if an IP or a CNAME
     if (ntohs(answers[i]->type) == 1) {
